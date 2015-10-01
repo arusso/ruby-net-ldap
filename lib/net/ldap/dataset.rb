@@ -26,7 +26,22 @@ class Net::LDAP::Dataset < Hash
     end
 
     ary += @comments unless @comments.empty?
-    keys.sort.each do |dn|
+
+    # We need to pad our indices (ie. {X}) so that sorting is consistent when X
+    # exceeds 9
+    keys.sort do |a,b|
+      ap=a.dup
+      a.scan(/{\d+}/).uniq.each do |val|
+        ap.gsub!("{#{val[/\d+/]}}","{#{val[/\d+/].rjust(10,'0')}}")
+      end
+
+      bp=b.dup
+      b.scan(/{\d+}/).uniq.each do |val|
+        bp.gsub!("{#{val[/\d+/]}}", "{#{val[/\d+/].rjust(10,'0')}}")
+      end
+
+      ap <=> bp
+    end.each do |dn|
       ary << "dn: #{dn}"
 
       attributes = self[dn].keys.map { |attr| attr.to_s }.sort
